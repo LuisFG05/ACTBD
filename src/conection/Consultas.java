@@ -5,13 +5,16 @@ import FormulariosSencillos.frmPrincipalA;
 import conection.Metodos.ForeignKeyConstraintException;
 import conection.conectionSQL;
 import conection.Metodos.ForeignKeyConstraintException;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import javax.swing.JOptionPane;
 import java.sql.Connection;
 import java.util.Date;
+import java.time.LocalTime;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 
 
 public class Consultas {
@@ -1155,6 +1158,80 @@ public ResultSet consultarEstancia() {
     return rs;
 }
 
+public boolean existeVisita(int idVisita){
+    String sql = "SELECT * FROM visita WHERE id_visita = ?";
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+    boolean existe = false;
+    try {
+        conn = conexion.conectar();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, idVisita);
+        ResultSet rs = pstmt.executeQuery();
+        if(rs.next()) existe = true; 
+    } catch (Exception e) {
+        // TODO: handle exception
+    }
+    return existe;
+}
+public boolean existeInmueble(int idInmueble){
+    String sql = "SELECT * FROM visita WHERE id_inmueble = ?";
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+    boolean existe = false;
+    try {
+        conn = conexion.conectar();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, idInmueble);
+        ResultSet rs = pstmt.executeQuery();
+        if(rs.next()) existe = true; 
+    } catch (Exception e) {
+        // TODO: handle exception
+    }
+    return existe;
+}
+public boolean existeCliente(int idCliente){
+    String sql = "SELECT * FROM visita WHERE id_cliente = ?";
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+    boolean existe = false;
+    try {
+        conn = conexion.conectar();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, idCliente);
+        ResultSet rs = pstmt.executeQuery();
+        if(rs.next()) existe = true; 
+    } catch (Exception e) {
+        // TODO: handle exception
+    }
+    return existe;
+}
+public boolean validaFechaHoraVisita(int idInmueble, String fechaT, String  horaT){
+    String sql = "SELECT fecha,hora FROM visita WHERE id_inmueble = ?";
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+    boolean existe = false;
+    try {
+        final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+        conn = conexion.conectar();
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        pstmt.setInt(1, idInmueble);
+        ResultSet rs = pstmt.executeQuery();
+        while(rs.next()){
+            String fecha = rs.getString("fecha");
+            if(fecha.equals(fechaT)){
+                String hora = rs.getString("hora");
+                LocalTime parsedTime1 = LocalTime.parse(hora, TIME_FORMATTER);
+                LocalTime parsedTime2 = LocalTime.parse(horaT, TIME_FORMATTER);
+                Duration difference = Duration.between(parsedTime1, parsedTime2).abs();
+                if(difference.toMinutes() <= 30) existe = true;
+            }
+        }
+    } catch (Exception e) {
+        // TODO: handle exception
+    }
+    return existe;
+}
 public void insertarVisitas(int idVisita, int idInmueble, int idCliente,String comentario,String fecha,String hora) {
     // Consulta SQL para insertar un registro en la tabla estancia
     String sql = "INSERT INTO visita(id_visita, id_inmueble, id_cliente, comentario,fecha,hora) VALUES (?,?,?,?,?,?)";
@@ -1201,9 +1278,8 @@ public void insertarVisitas(int idVisita, int idInmueble, int idCliente,String c
 }
 
  public ResultSet consultarVisitas(){
-     ResultSet rs = null;
-    String sql = "";
-
+    ResultSet rs = null;
+    String sql = "SELECT * FROM visita JOIN cliente on visita.id_cliente = cliente.id_cliente";
     try {
         // Crear una conexión
         Connection conn = new conectionSQL().conectar();
@@ -1212,7 +1288,6 @@ public void insertarVisitas(int idVisita, int idInmueble, int idCliente,String c
         if (conn != null) {
             // Preparar la declaración SQL
             PreparedStatement pstmt = conn.prepareStatement(sql);
-
             // Ejecutar la consulta y obtener el resultado
             rs = pstmt.executeQuery();
         } else {
@@ -1227,8 +1302,81 @@ public void insertarVisitas(int idVisita, int idInmueble, int idCliente,String c
     return rs;
  }
 
- 
+ public void actualizarVisitas(int idInmueble,int idCliente,String comentario,String fecha,String hora,int idVisita) {
+    // Consulta SQL para actualizar un registro en la tabla estancia
+    String sql = "UPDATE visita SET id_inmueble = ?, id_cliente = ?, comentario = ?,fecha=?,hora=?  WHERE id_visita = ?";
 
+    // Crear una instancia de la clase de conexión
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+
+    try {
+        // Establecer la conexión
+        conn = conexion.conectar();
+        if (conn != null) {
+            // Preparar la declaración SQL
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            // Establecer los valores de los parámetros en el PreparedStatement
+            pstmt.setInt(1, idInmueble);
+            pstmt.setInt(2, idCliente);
+            pstmt.setString(3, comentario);
+            pstmt.setString(4, fecha);
+            pstmt.setString(5, hora);
+            pstmt.setInt(6,idVisita);
+
+
+            // Ejecutar la actualización
+            int affectedRows = pstmt.executeUpdate();
+
+            // Verificar si la actualización fue exitosa
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(null, "Registro actualizado con exito");
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al actualizar");
+            }
+
+            // Cerrar el PreparedStatement
+            pstmt.close();
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } finally {
+        // Desconectar de la base de datos
+        if (conn != null) {
+            conexion.Desconectar();
+        }
+    }
 }
 
+public void borrarVisitas(int idVisita) {
+    String sql = "DELETE FROM visita WHERE id_visita = ?";
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+    try {
+        conn = conexion.conectar();
+        if (conn != null) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, idVisita);
+            int affectedRows = pstmt.executeUpdate();
 
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(null, "Registro borrado exitosamente");
+            } else {
+                JOptionPane.showMessageDialog(null, "fallo en eliminar el registro");
+            }
+
+            pstmt.close();
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } finally {
+        if (conn != null) {
+            conexion.Desconectar();
+        }
+    }
+    
+      } 
+ 
+}
+
+ 
