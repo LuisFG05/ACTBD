@@ -67,6 +67,7 @@ public class Consultas {
 private void abrirFormularioAdmin() {
     java.awt.EventQueue.invokeLater(() -> {
         frmPrincipal principal = new frmPrincipal(null, true); // Crear una instancia del formulario de administrador
+        principal.setLocationRelativeTo(null);
         principal.setVisible(true); // Hacer visible el formulario de administrador
     });
 }
@@ -1154,7 +1155,79 @@ public ResultSet consultarEstancia() {
     return rs;
 }
 
+public void insertarVisitas(int idVisita, int idInmueble, int idCliente,String comentario,String fecha,String hora) {
+    // Consulta SQL para insertar un registro en la tabla estancia
+    String sql = "INSERT INTO visita(id_visita, id_inmueble, id_cliente, comentario,fecha,hora) VALUES (?,?,?,?,?,?)";
 
+    // Crear una instancia de la clase de conexión
+    conectionSQL conexion = new conectionSQL();
+    Connection conn = null;
+
+    try {
+        // Establecer la conexión
+        conn = conexion.conectar();
+        if (conn != null) {
+            // Preparar la declaración SQL
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            // Establecer los valores de los parámetros en el PreparedStatement
+            pstmt.setInt(1, idVisita);
+            pstmt.setInt(2, idInmueble);
+            pstmt.setInt(3,idCliente);
+            pstmt.setString(4, comentario);
+            pstmt.setString(5, fecha);
+            pstmt.setString(6, hora);
+
+            // Ejecutar la inserción
+            int affectedRows = pstmt.executeUpdate();
+
+            // Verificar si la inserción fue exitosa
+            if (affectedRows > 0) {
+                JOptionPane.showMessageDialog(null, "Registro insertado con Exito");
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al hacer el registor");
+            }
+
+            // Cerrar el PreparedStatement
+            pstmt.close();
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    } finally {
+        // Desconectar de la base de datos
+        if (conn != null) {
+            conexion.Desconectar();
+        }
+    }
+}
+
+ public ResultSet consultarVisitas(){
+     ResultSet rs = null;
+    String sql = "";
+
+    try {
+        // Crear una conexión
+        Connection conn = new conectionSQL().conectar();
+
+        // Verificar si la conexión es exitosa
+        if (conn != null) {
+            // Preparar la declaración SQL
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+
+            // Ejecutar la consulta y obtener el resultado
+            rs = pstmt.executeQuery();
+        } else {
+            System.out.println("No se pudo establecer la conexión a la base de datos.");
+        }
+    } catch (SQLException e) {
+        // Manejar cualquier excepción SQL
+        e.printStackTrace();
+    }
+
+    // Devolver el ResultSet
+    return rs;
+ }
+
+ 
 
 }
 
